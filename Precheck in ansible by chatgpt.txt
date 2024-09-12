@@ -1,0 +1,206 @@
+Directory Structure
+
+plaintext
+
+ansible-playbook/
+│
+├── precheck.yml
+├── inventory
+└── roles/
+    ├── system_info/
+    │   └── tasks/
+    │       └── main.yml
+    ├── disk_usage/
+    │   └── tasks/
+    │       └── main.yml
+    ├── memory_usage/
+    │   └── tasks/
+    │       └── main.yml
+    ├── cpu_info/
+    │   └── tasks/
+    │       └── main.yml
+    ├── processes/
+    │   └── tasks/
+    │       └── main.yml
+    ├── network_config/
+    │   └── tasks/
+    │       └── main.yml
+    ├── firewall_status/
+    │   └── tasks/
+    │       └── main.yml
+    ├── selinux_status/
+    │   └── tasks/
+    │       └── main.yml
+    ├── updates/
+    │   └── tasks/
+    │       └── main.yml
+    └── uptime/
+        └── tasks/
+            └── main.yml
+
+Playbook: precheck.yml
+
+yaml
+
+---
+- name: Collect Precheck Outputs of a Linux Server
+  hosts: all
+  become: yes
+  roles:
+    - system_info
+    - disk_usage
+    - memory_usage
+    - cpu_info
+    - processes
+    - network_config
+    - firewall_status
+    - selinux_status
+    - updates
+    - uptime
+
+Role Tasks
+roles/system_info/tasks/main.yml
+
+yaml
+
+---
+- name: Gather basic system information
+  setup:
+
+roles/disk_usage/tasks/main.yml
+
+yaml
+
+---
+- name: Check disk usage
+  command: df -h
+  register: disk_usage
+
+- name: Display disk usage
+  debug:
+    var: disk_usage.stdout
+
+roles/memory_usage/tasks/main.yml
+
+yaml
+
+---
+- name: Check memory usage
+  command: free -m
+  register: memory_usage
+
+- name: Display memory usage
+  debug:
+    var: memory_usage.stdout
+
+roles/cpu_info/tasks/main.yml
+
+yaml
+
+---
+- name: Check CPU information
+  command: lscpu
+  register: cpu_info
+
+- name: Display CPU information
+  debug:
+    var: cpu_info.stdout
+
+roles/processes/tasks/main.yml
+
+yaml
+
+---
+- name: Check for high memory consuming processes
+  shell: ps aux --sort=-%mem | head -n 10
+  register: top_memory_processes
+
+- name: Display top memory consuming processes
+  debug:
+    var: top_memory_processes.stdout
+
+- name: Check for high CPU consuming processes
+  shell: ps aux --sort=-%cpu | head -n 10
+  register: top_cpu_processes
+
+- name: Display top CPU consuming processes
+  debug:
+    var: top_cpu_processes.stdout
+
+roles/network_config/tasks/main.yml
+
+yaml
+
+---
+- name: Check network configuration
+  command: ifconfig -a
+  register: network_config
+
+- name: Display network configuration
+  debug:
+    var: network_config.stdout
+
+roles/firewall_status/tasks/main.yml
+
+yaml
+
+---
+- name: Check firewall status
+  command: ufw status
+  register: firewall_status
+  ignore_errors: yes
+
+- name: Display firewall status
+  debug:
+    var: firewall_status.stdout
+
+roles/selinux_status/tasks/main.yml
+
+yaml
+
+---
+- name: Check SELinux status
+  command: getenforce
+  register: selinux_status
+  ignore_errors: yes
+
+- name: Display SELinux status
+  debug:
+    var: selinux_status.stdout
+
+roles/updates/tasks/main.yml
+
+yaml
+
+---
+- name: Check for available updates
+  command: yum check-update
+  register: updates_available
+  ignore_errors: yes
+
+- name: Display available updates
+  debug:
+    var: updates_available.stdout_lines
+
+roles/uptime/tasks/main.yml
+
+yaml
+
+---
+- name: Check uptime
+  command: uptime
+  register: system_uptime
+
+- name: Display uptime
+  debug:
+    var: system_uptime.stdout
+
+Running the Playbook
+
+To run this playbook, use the following command:
+
+sh
+
+ansible-playbook -i inventory precheck.yml
+
+This will execute all the roles in the specified order, collecting and displaying various system checks on the target Linux servers.

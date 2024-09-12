@@ -1,0 +1,87 @@
+If you want to run the script manually (and not schedule it for a specific time), we can simplify the script by removing the scheduling part and triggering the reboot immediately after stopping GPFS.
+
+Here is the updated script for manually running the reboot:
+
+### Script for Manual GPFS Node Reboot
+
+```bash
+#!/bin/bash
+
+# Define variables
+GPFS_NODE=$(hostname)
+EMAIL_NOTIFICATION="youremail@domain.com"
+LOG_FILE="/var/log/gpfs_manual_node_reboot.log"
+
+# Function to log messages
+log_message() {
+    echo "$(date '+%Y-%m-%d %H:%M:%S') : $1" >> $LOG_FILE
+}
+
+# Send an email notification
+send_email() {
+    mail -s "GPFS Node Reboot Notification" $EMAIL_NOTIFICATION <<< "GPFS node $GPFS_NODE is being rebooted manually."
+}
+
+# Start GPFS shutdown sequence
+shutdown_gpfs() {
+    log_message "Stopping GPFS on $GPFS_NODE..."
+
+    # Unmount all GPFS filesystems
+    mmumount all
+    if [ $? -ne 0 ]; then
+        log_message "Error: Failed to unmount GPFS filesystems."
+        exit 1
+    else
+        log_message "Successfully unmounted all GPFS filesystems."
+    fi
+
+    # Stop GPFS daemon
+    mmshutdown
+    if [ $? -ne 0 ]; then
+        log_message "Error: Failed to shut down GPFS on $GPFS_NODE."
+        exit 1
+    else
+        log_message "GPFS successfully shut down on $GPFS_NODE."
+    fi
+}
+
+# Start reboot
+reboot_node() {
+    log_message "Rebooting $GPFS_NODE..."
+    /sbin/reboot
+}
+
+# Main script execution
+log_message "Starting GPFS node reboot script for $GPFS_NODE."
+send_email
+
+# Shut down GPFS before reboot
+shutdown_gpfs
+
+# Perform the reboot
+reboot_node
+
+log_message "Script completed."
+```
+
+### How It Works:
+- **Manual Reboot**: The script shuts down GPFS immediately, then reboots the system without scheduling.
+- **Logging**: Activities are logged in `/var/log/gpfs_manual_node_reboot.log`.
+- **Email Notification**: An email is sent immediately when the reboot starts.
+
+### Usage:
+1. Make the script executable:
+   ```bash
+   chmod +x gpfs_manual_node_reboot.sh
+   ```
+
+2. Run the script manually:
+   ```bash
+   sudo ./gpfs_manual_node_reboot.sh
+   ```
+
+### Notes:
+- Replace `youremail@domain.com` with your actual email for notifications.
+- Ensure you run the script with root privileges (`sudo`) to properly stop GPFS and perform the reboot.
+
+This version is for situations where you manually want to trigger the reboot right after running the script.

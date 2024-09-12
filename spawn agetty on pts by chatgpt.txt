@@ -1,0 +1,55 @@
+To set a timeout for the root login spawned by agetty on a specific PTS, you can use the timeout command to automatically terminate the agetty process after a specified duration. Here is how you can achieve this both manually and through an Ansible playbook.
+Manually Setting a Timeout
+
+You can use the timeout command to run agetty with a time limit. For example, to allow root login on /dev/pts/2 for 5 minutes:
+
+bash
+
+sudo timeout 300 /sbin/agetty -a root /dev/pts/2
+
+In this command:
+
+    300 is the timeout duration in seconds (5 minutes).
+
+Ansible Playbook for Temporary Setup with Timeout
+
+Here's an Ansible playbook to automate the process and set a timeout for the agetty process:
+
+yaml
+
+---
+- name: Allow root login on a specific PTS temporarily with timeout
+  hosts: all
+  become: yes
+  vars:
+    pts_number: "2"
+    timeout_duration: "300"  # Timeout duration in seconds
+
+  tasks:
+    - name: Spawn a getty process on the specific PTS with timeout
+      shell: "timeout {{ timeout_duration }} /sbin/agetty -a root /dev/pts/{{ pts_number }}"
+      async: 0
+      poll: 0
+
+Explanation:
+
+    Variables:
+        pts_number: The PTS number you want to allow root login on. Replace "2" with the desired PTS number.
+        timeout_duration: The timeout duration in seconds. Replace "300" with the desired timeout duration.
+
+    Tasks:
+        Spawn a getty process with timeout: Uses the shell module to run the timeout command with the agetty process. The command is run asynchronously (async: 0 and poll: 0), meaning it will not block the Ansible playbook execution.
+
+Example Usage
+
+Run the playbook with the appropriate inventory and variables:
+
+bash
+
+ansible-playbook -i your_inventory_file playbook.yml -e "pts_number=2 timeout_duration=300"
+
+This will allow root login on /dev/pts/2 for 5 minutes, after which the agetty process will be automatically terminated.
+Notes:
+
+    Security Considerations: Allowing root login can pose significant security risks. Ensure this is only done in a controlled environment and for legitimate administrative purposes.
+    Cleanup: The timeout command ensures that the agetty process will be terminated after the specified duration, so no manual cleanup is necessary.
